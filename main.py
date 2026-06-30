@@ -90,9 +90,19 @@ def run_monte_carlo(n_simulations):
         ascending=False
     ).reset_index(drop=True)
     
-    # Save the output
     processed_dir = Path(__file__).resolve().parent / "data" / "processed"
     output_path = processed_dir / "wc2026_tournament_probabilities.csv"
+    
+    # Merge with original metadata columns to preserve them and avoid KeyError: 'fifa_rank'
+    # The original metadata columns are: confederation, fifa_rank, rank_change, elo, form_score
+    try:
+        df_old_prob = pd.read_csv(output_path)
+        df_metadata = df_old_prob[["team", "confederation", "fifa_rank", "rank_change", "elo", "form_score"]].drop_duplicates()
+        df_simulation_results = df_simulation_results.merge(df_metadata, on="team", how="left")
+    except Exception as e:
+        print(f"Warning: Could not merge original metadata: {e}")
+        
+    # Save the output
     df_simulation_results.to_csv(output_path, index=False)
     
     print("\nMonte Carlo simulation complete!")
