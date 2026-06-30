@@ -417,46 +417,48 @@ def page_match_explorer():
 
     pred = predict_match(home_team, away_team)
 
-    st.markdown("### Model probabilities")
+    # Calculate two-sided winning probabilities (draw is split proportionally)
+    p_home = pred["home_win_prob"]
+    p_away = pred["away_win_prob"]
+    total = p_home + p_away
+    home_pct = (p_home / total) * 100
+    away_pct = (p_away / total) * 100
 
-    col1, col2, col3, col4, col5 = st.columns(5)
+    st.markdown("### Win prediction")
 
+    col1, col2 = st.columns(2)
     with col1:
-        st.metric(f"{team_label(home_team)} xG", f"{pred['home_xg']:.2f}")
+        st.markdown(
+            f"""
+            <div style="background: rgba(214, 40, 40, 0.15); border: 2px solid #D62828; border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                <h2 style="margin: 0; color: white; font-size: 22px;">{team_label(home_team)}</h2>
+                <h1 style="margin: 10px 0 0 0; font-size: 52px; color: #E94E4E; font-weight: 800;">{home_pct:.1f}%</h1>
+                <p style="margin: 8px 0 0 0; font-size: 14px; color: #cccccc;">Projected Goals (xG): <strong>{pred['home_xg']:.2f}</strong></p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     with col2:
-        st.metric(f"{team_label(away_team)} xG", f"{pred['away_xg']:.2f}")
+        st.markdown(
+            f"""
+            <div style="background: rgba(26, 58, 143, 0.15); border: 2px solid #1A3A8F; border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                <h2 style="margin: 0; color: white; font-size: 22px;">{team_label(away_team)}</h2>
+                <h1 style="margin: 10px 0 0 0; font-size: 52px; color: #4A76E8; font-weight: 800;">{away_pct:.1f}%</h1>
+                <p style="margin: 8px 0 0 0; font-size: 14px; color: #cccccc;">Projected Goals (xG): <strong>{pred['away_xg']:.2f}</strong></p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-    with col3:
-        st.metric("Team A win", format_probability(pred["home_win_prob"]))
-
-    with col4:
-        st.metric("Draw", format_probability(pred["draw_prob"]))
-
-    with col5:
-        st.metric("Team B win", format_probability(pred["away_win_prob"]))
-
-    st.markdown("### Most likely scorelines")
-
-    scorelines = (
-        pred["score_probs"]
-        .sort_values("probability", ascending=False)
-        .head(10)
-        .copy()
-    )
-
-    scorelines["scoreline"] = (
-        scorelines["home_goals"].astype(str)
-        + " - "
-        + scorelines["away_goals"].astype(str)
-    )
-
-    scorelines["probability"] = scorelines["probability"].map(lambda x: f"{x * 100:.1f}%")
-
-    st.dataframe(
-        scorelines[["scoreline", "probability"]],
-        use_container_width=True,
-        hide_index=True,
+    st.markdown(
+        f"""
+        <div style="display: flex; width: 100%; border-radius: 20px; overflow: hidden; height: 24px; margin: 25px 0; background-color: #222; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);">
+            <div style="width: {home_pct:.1f}%; background: linear-gradient(90deg, #D62828, #E94E4E);"></div>
+            <div style="width: {away_pct:.1f}%; background: linear-gradient(90deg, #3B5EB9, #1A3A8F);"></div>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
     st.markdown("### Team context")
