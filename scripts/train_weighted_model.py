@@ -32,8 +32,8 @@ def train():
     
     # Calculate sample weights
     weights = np.zeros(N)
-    weights[recent_mask] = (0.35 * N) / N_recent
-    weights[rest_mask] = (0.65 * N) / N_rest
+    weights[recent_mask] = (0.50 * N) / N_recent
+    weights[rest_mask] = (0.50 * N) / N_rest
     
     print("Sample weights calculated:")
     print(f"  Recent match weight: {weights[recent_mask][0]:.4f} (Sum: {weights[recent_mask].sum():.1f})")
