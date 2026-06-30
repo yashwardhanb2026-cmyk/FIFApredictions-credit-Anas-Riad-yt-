@@ -215,7 +215,7 @@ export default function MatchExplorer() {
 
             {/* Model note */}
             <p className="text-[11px] text-[#9a9078] text-center border-t border-white/5 pt-4">
-              ⚙️ Poisson regression model with 4-year temporal weighting (35% recent / 65% historical)
+              ⚙️ Poisson regression model with 4-year temporal weighting (50% recent / 50% historical)
             </p>
           </div>
         )}
