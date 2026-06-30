@@ -417,16 +417,18 @@ def page_match_explorer():
 
     pred = predict_match(home_team, away_team)
 
-    # Calculate two-sided winning probabilities (draw is split proportionally)
+    # Three-way probabilities directly from the Poisson model
     p_home = pred["home_win_prob"]
+    p_draw = pred["draw_prob"]
     p_away = pred["away_win_prob"]
-    total = p_home + p_away
+    total = p_home + p_draw + p_away  # should be ~1.0
     home_pct = (p_home / total) * 100
+    draw_pct = (p_draw / total) * 100
     away_pct = (p_away / total) * 100
 
     st.markdown("### Win prediction")
 
-    col1, col2 = st.columns(2)
+    col1, col_draw, col2 = st.columns([2, 1, 2])
     with col1:
         st.markdown(
             f"""
@@ -434,6 +436,17 @@ def page_match_explorer():
                 <h2 style="margin: 0; color: white; font-size: 22px;">{team_label(home_team)}</h2>
                 <h1 style="margin: 10px 0 0 0; font-size: 52px; color: #E94E4E; font-weight: 800;">{home_pct:.1f}%</h1>
                 <p style="margin: 8px 0 0 0; font-size: 14px; color: #cccccc;">Projected Goals (xG): <strong>{pred['home_xg']:.2f}</strong></p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with col_draw:
+        st.markdown(
+            f"""
+            <div style="background: rgba(100, 100, 100, 0.15); border: 2px solid #888; border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); height: 100%;">
+                <h2 style="margin: 0; color: #aaaaaa; font-size: 18px;">Draw</h2>
+                <h1 style="margin: 10px 0 0 0; font-size: 42px; color: #cccccc; font-weight: 800;">{draw_pct:.1f}%</h1>
             </div>
             """,
             unsafe_allow_html=True,
@@ -454,8 +467,9 @@ def page_match_explorer():
     st.markdown(
         f"""
         <div style="display: flex; width: 100%; border-radius: 20px; overflow: hidden; height: 24px; margin: 25px 0; background-color: #222; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);">
-            <div style="width: {home_pct:.1f}%; background: linear-gradient(90deg, #D62828, #E94E4E);"></div>
-            <div style="width: {away_pct:.1f}%; background: linear-gradient(90deg, #3B5EB9, #1A3A8F);"></div>
+            <div style="width: {home_pct:.1f}%; background: linear-gradient(90deg, #D62828, #E94E4E);" title="{home_team} win: {home_pct:.1f}%"></div>
+            <div style="width: {draw_pct:.1f}%; background: linear-gradient(90deg, #666, #999);" title="Draw: {draw_pct:.1f}%"></div>
+            <div style="width: {away_pct:.1f}%; background: linear-gradient(90deg, #3B5EB9, #1A3A8F);" title="{away_team} win: {away_pct:.1f}%"></div>
         </div>
         """,
         unsafe_allow_html=True,
