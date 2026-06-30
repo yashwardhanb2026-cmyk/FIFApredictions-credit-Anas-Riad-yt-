@@ -13,9 +13,16 @@ REFERENCE_DIR = DATA_DIR / "reference"
 MODELS_DIR = PROJECT_ROOT / "models"
 
 
+_models_cache = None
+_datasets_cache = None
+_lookups_cache = None
+
 @st.cache_resource
 def load_models():
     """Load trained Poisson models and feature columns."""
+    global _models_cache
+    if _models_cache is not None:
+        return _models_cache
 
     with open(MODELS_DIR / "poisson_home.pkl", "rb") as f:
         model_home = pickle.load(f)
@@ -26,12 +33,16 @@ def load_models():
     with open(MODELS_DIR / "feature_columns.pkl", "rb") as f:
         feature_columns = pickle.load(f)
 
-    return model_home, model_away, feature_columns
+    _models_cache = (model_home, model_away, feature_columns)
+    return _models_cache
 
 
 @st.cache_data
 def load_datasets():
     """Load all datasets needed by the app."""
+    global _datasets_cache
+    if _datasets_cache is not None:
+        return _datasets_cache
 
     df_fixtures = pd.read_csv(INTERIM_DIR / "wc2026_fixtures.csv")
 
@@ -48,7 +59,7 @@ def load_datasets():
         DATA_DIR / "raw" / "wc_2026_48_teams_fifa_rank_change_corrected.csv"
     )
 
-    return {
+    _datasets_cache = {
         "fixtures": df_fixtures,
         "match_features": df_match_features,
         "form": df_form,
@@ -59,11 +70,15 @@ def load_datasets():
         "groups": df_groups,
         "fifa_rank": df_fifa_rank,
     }
+    return _datasets_cache
 
 
 @st.cache_data
 def build_lookups():
     """Build lookup dictionaries used by prediction and simulation functions."""
+    global _lookups_cache
+    if _lookups_cache is not None:
+        return _lookups_cache
 
     data = load_datasets()
 
@@ -115,7 +130,7 @@ def build_lookups():
         zip(df_fifa_rank["Nation"], df_fifa_rank["rank_change"])
     )
 
-    return {
+    _lookups_cache = {
         "team_to_elo": team_to_elo,
         "team_to_confederation": team_to_confederation,
         "team_to_group": team_to_group,
@@ -124,3 +139,4 @@ def build_lookups():
         "team_to_fifa_rank_change": team_to_fifa_rank_change,
         "df_h2h": df_h2h,
     }
+    return _lookups_cache

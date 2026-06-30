@@ -48,7 +48,7 @@ def build_match_features(home_team, away_team, neutral=True, tournament_weight=5
     return X
 
 
-def predict_match(home_team, away_team, neutral=True, tournament_weight=5, max_goals=10):
+def predict_match(home_team, away_team, neutral=True, tournament_weight=5, max_goals=10, return_probs_df=False):
     """Predict expected goals and win/draw/loss probabilities."""
 
     model_home, model_away, _ = load_models()
@@ -63,24 +63,48 @@ def predict_match(home_team, away_team, neutral=True, tournament_weight=5, max_g
     home_xg = float(model_home.predict(X)[0])
     away_xg = float(model_away.predict(X)[0])
 
-    score_probs = []
-
     home_win_prob = 0.0
     draw_prob = 0.0
     away_win_prob = 0.0
 
-    for home_goals in range(max_goals + 1):
-        for away_goals in range(max_goals + 1):
-            prob = float(
-                poisson.pmf(home_goals, home_xg)
-                * poisson.pmf(away_goals, away_xg)
-            )
+    # Fast Poisson PMF precomputations using math.exp to avoid scipy overhead
+    import math
+    
+    home_probs = []
+    away_probs = []
+    
+    exp_neg_home = math.exp(-home_xg) if home_xg > 0 else 1.0
+    exp_neg_away = math.exp(-away_xg) if away_xg > 0 else 1.0
+    
+    # Precomputed factorials from 0 to 10
+    fact = [1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880, 3628800]
+    
+    for k in range(max_goals + 1):
+        if home_xg > 0:
+            h_p = exp_neg_home * (home_xg**k) / fact[k]
+        else:
+            h_p = 1.0 if k == 0 else 0.0
+            
+        if away_xg > 0:
+            a_p = exp_neg_away * (away_xg**k) / fact[k]
+        else:
+            a_p = 1.0 if k == 0 else 0.0
+            
+        home_probs.append(h_p)
+        away_probs.append(a_p)
 
-            score_probs.append({
-                "home_goals": home_goals,
-                "away_goals": away_goals,
-                "probability": prob,
-            })
+    score_probs = []
+    for home_goals in range(max_goals + 1):
+        h_p = home_probs[home_goals]
+        for away_goals in range(max_goals + 1):
+            prob = h_p * away_probs[away_goals]
+
+            if return_probs_df:
+                score_probs.append({
+                    "home_goals": home_goals,
+                    "away_goals": away_goals,
+                    "probability": prob,
+                })
 
             if home_goals > away_goals:
                 home_win_prob += prob
@@ -89,7 +113,7 @@ def predict_match(home_team, away_team, neutral=True, tournament_weight=5, max_g
             else:
                 away_win_prob += prob
 
-    return {
+    res = {
         "home_team": home_team,
         "away_team": away_team,
         "home_xg": home_xg,
@@ -97,8 +121,10 @@ def predict_match(home_team, away_team, neutral=True, tournament_weight=5, max_g
         "home_win_prob": home_win_prob,
         "draw_prob": draw_prob,
         "away_win_prob": away_win_prob,
-        "score_probs": pd.DataFrame(score_probs),
     }
+    if return_probs_df:
+        res["score_probs"] = pd.DataFrame(score_probs)
+    return res
 
 
 def get_h2h_score(team_a, team_b):
