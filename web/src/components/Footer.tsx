@@ -29,8 +29,8 @@ export default function Footer() {
           <a href="https://github.com/yashwardhanb2026-cmyk/FIFApredictions-credit-Anas-Riad-yt-" target="_blank" rel="noopener noreferrer" className="hover:text-[#f5c518] transition-colors">
             GitHub
           </a>
-          <a href="#" className="hover:text-[#f5c518] transition-colors">
-            Methodology
+          <a href="https://en.wikipedia.org/wiki/Goat" target="_blank" rel="noopener noreferrer" className="hover:text-[#f5c518] transition-colors">
+            Made by Yashwardhan
           </a>
         </div>
       </div>
